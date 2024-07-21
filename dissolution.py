@@ -96,10 +96,6 @@ def solve_dissolution(sid: SimInputData, inc: Incidence, graph: Graph, \
         @ inc.incidence > 0))
     # find vector with non-diagonal coefficients
     try:
-        # warnings.warn(Warning())
-        # warnings.filterwarnings("error", category=RuntimeWarning)
-        # qc = edges.flow * np.exp(-np.abs(sid.Da / (1 + sid.G * edges.diams) \
-        # * edges.diams * edges.lens / edges.flow))
         if sid.use_volume:
             d_with_dead = np.sqrt(np.abs(edges.diams_initial**2 - 4*edges.dead_bacteria/(np.pi*edges.lens)))
             alive_b_diameter = (edges.alive_bacteria>0)* (d_with_dead - edges.diams )      
@@ -109,11 +105,6 @@ def solve_dissolution(sid: SimInputData, inc: Incidence, graph: Graph, \
             theta = (edges.alive_bacteria>0)
             qc = edges.flow * np.exp(-np.abs(sid.Da / (1 + sid.G * edges.diams) \
             * edges.diams * np.pi * edges.lens * theta / edges.flow)) 
-            # qc = edges.flow * np.exp(-np.abs(sid.Da / (1 + sid.G * edges.diams) \
-            # * edges.diams * np.pi * edges.lens * theta / edges.flow)* (edges.diams>sid.dmin) ) 
-            # zatkany = np.where(np.min(edges.diams))
-            # print(f"flow: {edges.flow[zatkany]},c: {qc[zatkany]/edges.flow[zatkany]}, *alpha: {sid.alpha*qc[zatkany]/edges.flow[zatkany]}")
-
     except RuntimeWarning:
         print(f"In itteration nr: {i}")
         print("Runtime Warning edges DIAMS:")

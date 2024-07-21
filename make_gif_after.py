@@ -8,7 +8,7 @@ def make_gif():
     image_folder = dirname
     gif_path = dirname + 'output.gif'
     duration = 0.5
-    print(f"It should be {gif_path}")
+    print(f"The gif created: {gif_path}")
     images = []
 
     # Get the list of image files in the folder

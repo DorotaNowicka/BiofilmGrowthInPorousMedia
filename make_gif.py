@@ -8,7 +8,7 @@ def make_gif(sid: SimInputData):
     image_folder = sid.dirname
     gif_path = sid.dirname + '/output.gif'
     duration = sid.graph_duration
-    print(f"It should be {gif_path}")
+    print(f"The gif created: {gif_path}")
     images = []
 
     # Get the list of image files in the folder

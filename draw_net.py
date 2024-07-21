@@ -36,27 +36,22 @@ def set_colors(edges: Edges, sid: SimInputData, alive='not'):
     colors = []
     if alive == 'alive':
         if (edges.diams_initial == edges.diams).all():
-            # amounts_of_bacteria = edges.alive_bacteria
             d_squared = (edges.diams_initial**2 - 4*edges.dead_bacteria/(np.pi*edges.lens))
             d_squared = (d_squared>0)*d_squared+(d_squared<=0)*edges.diams_initial
             d_with_dead = np.sqrt(d_squared)
             amounts_of_bacteria = (edges.alive_bacteria>0)* (d_with_dead - edges.diams )
         else:
-            # amounts_of_bacteria =  edges.alive_bacteria 
             d_squared = (edges.diams_initial**2 - 4*edges.dead_bacteria/(np.pi*edges.lens))
             d_squared = (d_squared>0)*d_squared+(d_squared<=0)*edges.diams_initial
             d_with_dead = np.sqrt(d_squared)
             amounts_of_bacteria = (edges.alive_bacteria>0)* (d_with_dead - edges.diams )
         procent_of_bacteria = amounts_of_bacteria/edges.diams_initial
-        # procent_of_bacteria = 4*edges.alive_bacteria/(edges.diams_initial**2*np.pi+edges.lens)
     else:
         if (edges.diams_initial == edges.diams).all():
             amounts_of_bacteria = edges.diams_initial-edges.diams
         else:
             amounts_of_bacteria = edges.diams_initial-edges.diams
-            # amounts_of_bacteria = edges.alive_bacteria + edges.dead_bacteria
         procent_of_bacteria = amounts_of_bacteria/edges.diams_initial
-        # procent_of_bacteria = 4*edges.alive_bacteria/(edges.diams_initial**2*np.pi+edges.lens)
     for amount, procent, diam in zip(amounts_of_bacteria, procent_of_bacteria, edges.diams):
         if np.isclose(amount, 0):
             color = '#000000'
@@ -66,7 +61,6 @@ def set_colors(edges: Edges, sid: SimInputData, alive='not'):
             color = '#ff0000'
             colors.append(color)
         elif procent < sid.critical_bacteria_radius:
-            # adjust based on your diameter range
             norm = plt.Normalize(sid.dmin, sid.critical_bacteria_radius)
             cmap = plt.get_cmap('summer')
             edge_color = cmap(norm(amount))
@@ -74,7 +68,6 @@ def set_colors(edges: Edges, sid: SimInputData, alive='not'):
         else:
             if procent < sid.critical_bacteria_radius:
                 print("ERROR?")
-            # adjust based on your diameter range
             norm = plt.Normalize(sid.critical_bacteria_radius, sid.full_edge)
             cmap = plt.get_cmap('cool')
             edge_color = cmap(norm(amount))
@@ -114,11 +107,6 @@ def set_colors_shear(edges: Edges, sid: SimInputData):
         norm = plt.Normalize(0, sid.max_shear)
         cmap = plt.get_cmap('viridis')
         for shear in edges.shear:
-        #     if shear > 2*sid.max_shear:
-        #         colors.append('#ff0000')
-        #     elif shear > sid.max_shear:
-        #         colors.append('#ff7400')
-        #     else:
             edge_color = cmap(norm(shear))
             colors.append(mcolors.to_hex(edge_color))
     
@@ -192,15 +180,11 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
     if data == 'd':
         qs1 = (1 - edges.boundary_list) * edges.diams * (1/2)
         nx.draw_networkx_edges(graph, pos, edge_color=set_colors(edges, sid),
-                               width=5 * sid.ddrawconst * np.array(qs1))
-        # nx.draw_networkx_labels(graph, pos,labels_dict)
-       
-        # nx.draw_networkx_edges(graph, pos, edge_color='k',
-        #                        width=10 * sid.ddrawconst * np.array(qs2))
+                               width=sid.ddrawconst * np.array(qs1))
     elif data == 'q':
         qs = (1 - edges.boundary_list) * np.abs(edges.flow)
         nx.draw_networkx_edges(graph, pos, edge_color='k',
-                               width=5 * sid.ddrawconst * np.array(qs))
+                               width=sid.ddrawconst * np.array(qs))
     # SECOND PLOT
     plt.subplot(spec.new_subplotspec((1, 0), colspan=2))
     plt.title('Flow and shear', fontsize=35)
@@ -218,7 +202,7 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
                 edgecolors='white')
     qs = (1 - edges.boundary_list) * np.abs(edges.flow) 
     nx.draw_networkx_edges(graph, pos, edge_color=set_colors_shear(edges, sid),
-                           width=sid.qdrawconst * np.array(qs))
+                           width=sid.ddrawconst * np.array(qs))
     # THIRD PLOT
    
     plt.subplot(spec.new_subplotspec((0, 2), colspan=2))
@@ -240,12 +224,8 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
     plt.scatter(x_out, y_out, s=60, facecolors='black',
                 edgecolors='white')
     qs3 = (1 - edges.boundary_list) * edges.diams_initial * (1/2)
-    # qs1 = (1 - edges.boundary_list) * edges.diams \
-    # * (edges.diams < edges.diams_initial / 2)
-    # qs2 = (1 - edges.boundary_list) * edges.diams \
-    #     * (edges.diams >= edges.diams_initial / 2)
     nx.draw_networkx_edges(graph, pos, edge_color=set_colors(edges, sid),
-                           width=5 * sid.ddrawconst * np.array(qs3))
+                           width=sid.ddrawconst * np.array(qs3))
     if sid.plot_edges_numbers:
         labels_dict = dict(zip(graph.edges,list(range(len(edges.diams)))))
         nx.draw_networkx_edge_labels(graph, pos, labels_dict)
@@ -270,12 +250,8 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
     plt.scatter(x_out, y_out, s=60, facecolors='black',
                 edgecolors='white')
     qs3 = (1 - edges.boundary_list) * edges.diams_initial * (1/2)
-    # qs1 = (1 - edges.boundary_list) * edges.diams \
-    # * (edges.diams < edges.diams_initial / 2)
-    # qs2 = (1 - edges.boundary_list) * edges.diams \
-    #     * (edges.diams >= edges.diams_initial / 2)
     nx.draw_networkx_edges(graph, pos, edge_color=set_colors_shear(edges, sid),
-                           width= sid.qdrawconst * np.array(qs3))
+                           width=sid.ddrawconst * np.array(qs3))
     if sid.plot_edges_numbers:
         labels_dict = dict(zip(graph.edges,list(range(len(edges.diams)))))
         nx.draw_networkx_edge_labels(graph, pos, labels_dict)

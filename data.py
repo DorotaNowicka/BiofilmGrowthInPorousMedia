@@ -97,7 +97,7 @@ class Data():
         Q_in = np.sum(edges.inlet * np.abs(edges.flow))
         Q_out = np.sum(edges.outlet * np.abs(edges.flow))
         print('Q_in =', Q_in, 'Q_out =', Q_out)
-        if np.abs(Q_out-20)>1:
+        if np.abs(Q_out-100)>1:
             raise ValueError
 
 
@@ -237,36 +237,3 @@ class Data():
 
     def set_infected(self, edges: Edges, infected_by_bacteria: np.ndarray, sid: SimInputData) -> None:
         infected_by_bacteria += (edges.diams<(edges.diams_initial*0.7))*np.ones(len(edges.diams))
-
-
-    def draw_PFPs_width(self, sid: SimInputData, PFPs_width_sum: list, PFPs_width_mean: float, stable_index: int) -> None:
-        """ Plot data from text file.
-
-        This function loads the data from text file params.txt and plots them
-        to file params.png.
-        """
-        f = open(self.dirname + f'/params_par{sid.test_param}.txt', 'r', encoding = "utf-8")
-        data = np.loadtxt(f)
-        n_data = data.shape[1]
-        t = data[:, 0]
-
-        plt.figure(figsize=(sid.figsize * 1.5, sid.figsize))
-        plt.rc('font', size=50)
-        plt.title(f"PFPs width sum", fontsize=50)
-        plt.plot(t[stable_index:], PFPs_width_sum[stable_index:])
-        plt.xlabel('simulation time')
-        # plt.savefig(f"{self.dirname.rsplit('/',1)[0]}/flow_number_par{'{:06.8f}'.format(sid.test_param)}.png")
-        plt.savefig(f"{self.dirname}/PFPs_width_sum_par{'{:06.8f}'.format(sid.test_param)}.png")
-
-        plt.figure(figsize=(sid.figsize * 1.5, sid.figsize))
-        plt.rc('font', size=50)
-        plt.title(f"PFPs width mean", fontsize=50)
-        plt.plot(t[stable_index:], PFPs_width_mean[stable_index:])
-        print(stable_index)
-        plt.xlabel('simulation time')
-        # plt.savefig(f"{self.dirname.rsplit('/',1)[0]}/flow_number_par{'{:06.8f}'.format(sid.test_param)}.png")
-        plt.savefig(f"{self.dirname}/PFPs_width_mean_par{'{:06.8f}'.format(sid.test_param)}.png")
-
-
-
-        plt.close()

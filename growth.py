@@ -70,27 +70,14 @@ def update_diameters(sid: SimInputData, inc: Incidence, edges: Edges,
     breakthrough = False
     # increase diamater with growth
     edges.alive_bacteria += change
-    # channel=np.where(np.abs(edges.flow)>=np.max(np.abs(edges.flow))*sid.flow_number_point)
-    # print(f"Growth            -{change[channel]}")
-          
-    # set below limit
-
-
-    # zatkany = np.where(np.min(edges.diams))
-    # print(f"Zatkany: d: {edges.diams[zatkany]}, growth: {change[zatkany]}")
-
     for i in range(len(edges.alive_bacteria)):
         if edges.alive_bacteria[i]+edges.dead_bacteria[i]>edges.max_bacteria[i]:
             edges.alive_bacteria[i]=edges.max_bacteria[i]-edges.dead_bacteria[i]
     for i in range(len(edges.alive_bacteria)):
         if edges.alive_bacteria[i]+edges.dead_bacteria[i]>((edges.lens[i]*np.pi)/4 * edges.diams_initial[i]**2):
-            print("większe od 1")
-    # # edges.alive_bacteria = [edges.alive_bacteria if edges.alive_bacteria+edges.dead_bacteria<edges.max_bacteria else edges.max_bacteria-edges.dead_bacteria ]
-    # if np.any((edges.alive_bacteria+edges.dead_bacteria)>edges.max_bacteria*1.0000001):
-    #     print("No nie, nie działam")
+            print("Detachment is bigger than 1!!!")
     volume_after_growth= edges.diams_initial**2*np.pi/4*edges.lens-edges.alive_bacteria-edges.dead_bacteria
     if np.any(volume_after_growth<0):
-        print("Why oh why?")
         print(volume_after_growth[np.where(volume_after_growth<0)])
         raise ValueError
     diams_new =  np.sqrt(4*volume_after_growth/(np.pi*edges.lens))            
@@ -146,10 +133,7 @@ def solve_d(sid: SimInputData, inc: Incidence, edges: Edges, cb: np.ndarray) \
     # create list of concentrations which should be used for growth of each
     # edge (upstream one)
     cb_in = np.abs((spr.diags(edges.flow) @ inc.incidence > 0)) @ cb
-    # change = cb_in * np.abs(edges.flow) / (sid.Da * edges.lens
-    #                                        * edges.diams) * (1 - np.exp(-sid.Da / (1 + sid.G * edges.diams)
-    #                                                                     * edges.diams * edges.lens / np.abs(edges.flow))) * sid.dt
-    # edges.alive_bacteria = np.round(edges.alive_bacteria, 10)
+
 
     if sid.use_volume:
         d_squared = (edges.diams_initial**2 - 4*edges.dead_bacteria/(np.pi*edges.lens))
@@ -162,17 +146,13 @@ def solve_d(sid: SimInputData, inc: Incidence, edges: Edges, cb: np.ndarray) \
         change = np.array(np.ma.fix_invalid(change, fill_value = 0))
     else:
         theta = (edges.alive_bacteria>0)
-        # change = sid.alpha *theta * cb_in *np.abs(edges.flow)* (1-np.exp(
-        #     -sid.Da / (1 + sid.G * edges.diams) * edges.diams * edges.lens *np.pi
-        #     / np.abs(edges.flow))) * sid.dt
-        change = sid.alpha *theta * cb_in *np.abs(edges.flow)* (1-np.exp(-1*
-            sid.k * edges.diams * edges.lens *np.pi
+        change = sid.alpha *theta * cb_in *np.abs(edges.flow)* (1-np.exp(
+            -sid.Da / (1 + sid.G * edges.diams) * edges.diams * edges.lens *np.pi
             / np.abs(edges.flow))) * sid.dt
         change = np.array(np.ma.fix_invalid(change, fill_value = 0))
 
 
     return change
-    # return change_bacterial_growth
 
 
 def solve_dp(sid: SimInputData, inc: Incidence, edges: Edges, cb: np.ndarray,

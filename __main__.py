@@ -18,6 +18,7 @@ import pressure as Pr
 import save as Sv
 import numpy as np
 import gc
+import incidence as In
 
 from build import build
 from utils import initialize_iterators, update_iterators
@@ -25,6 +26,8 @@ from make_gif import make_gif
 
 # initialize main classes
 sid, inc, graph, edges, data = build()
+# In.overwrite_geometry(edges)
+
 edges.max_bacteria = (np.pi/4)*edges.lens*(edges.diams_initial**2-sid.dmin**2)
 # initialize constant vectors
 pressure_b = Pr.create_vector(sid, graph)
@@ -34,8 +37,6 @@ iters, tmax, i, t, breakthrough = initialize_iterators(sid)
 edges_with_detachment = []
 nr_of_draw_detachment = 0
 flow_number = []
-PFPs_width_sum = []
-PFPs_width_mean = []
 total_bacteria = []
 total_alive_bacteria = []
 infected_by_bacteria = np.zeros(len(edges.alive_bacteria))
@@ -58,24 +59,15 @@ while t < tmax and i < iters and not breakthrough:
     pressure = Pr.solve_flow(sid, inc, graph, edges, pressure_b)
     # find B concentration
     cb = Di.solve_dissolution(sid, inc, graph, edges, cb_b, i)
-    # if i!=0:
-    #     for x in range(len(cb)):
-    #         print(f'{cb[x]}   {cb_new[x]}')
-    # cb = cb_new
     # find C concentration
     cc = Pi.solve_precipitation(sid, inc, graph, edges, cb)
     Pr.calculate_flow_number(sid, edges, flow_number)
-    Pr.calculate_PFPs_width(sid, edges, PFPs_width_sum, PFPs_width_mean)
-
-    # print(cb[2],';',cb[25], edges.diams[3], edges.flow[3])
-    # print(edges.diams[3])
-
-
-    # graph.bacterial_detaching(sid, edges, edges_with_detachment)
+    # collect min and max shear value
     shears.append((np.min(np.abs(edges.shear)),np.max(np.abs(edges.shear))))
 
-    
     detachment = graph.bacterial_detaching(sid, edges, edges_with_detachment)
+
+    # draw network visualization in the case of rapid detachment
     if graph.step_with_detachment == True:
         if sid.draw_detachment:
             print("I am drawing")
@@ -105,18 +97,13 @@ while t < tmax and i < iters and not breakthrough:
         if nr_of_draw_detachment > 1:
             graph.step_with_detachment = False
 
-
+    # spread bacteria to next channels
     graph.bacterial_spread(sid, edges)
     if i > 0:
         graph.bacterial_dying(sid, edges)
     graph.update_network(edges)
-    # if np.any(edges.flow == 0):
-    #     print(len(np.where(edges.flow == 0)))
-    #     print((np.where(edges.flow == 0)))
-    #     print((edges.flow == 0))
-    #     print(f"TU COŚ SIĘ ZERUJE: {np.where(edges.flow == 0)}")
-    #     # raise ValueError
-
+ 
+    # collect network statistics
     data.set_infected(edges, infected_by_bacteria, sid)
     percent_infected = len(np.where(infected_by_bacteria>0)[0])/len(infected_by_bacteria)
     if outlet_time_found==False:
@@ -131,14 +118,6 @@ while t < tmax and i < iters and not breakthrough:
     if i % sid.plot_every in [0]:
     # if (i % sid.plot_every == 0) or (i-1 % sid.plot_every == 0) or (i-2% sid.plot_every == 0) or (i-3 % sid.plot_every == 0) or (i-4 % sid.plot_every == 0):
         if t >= sid.draw_after and t <= sid.draw_to:
-            channel=np.where(np.abs(edges.flow)>=np.max(np.abs(edges.flow))*sid.flow_number_point)
-            # print(f"Channel from edges-{channel}")
-            # print(f"Bacteria          -{edges.alive_bacteria[channel]}")
-            # print(f"max bacteria      -{edges.max_bacteria[channel]}")
-            # print(f'detachment -{detachment[channel]}')
-            
-
-
             data.check_data(edges)
             Dr.uniform_hist(sid, graph, edges, cb, cc,
                             'network_{:05d}.png'.format(sid.old_iters), "d", percent_infected, t)
@@ -147,16 +126,13 @@ while t < tmax and i < iters and not breakthrough:
     # dissolved/precipitated values, check if network dissolved, find new
     # timestep
     breakthrough, dt_next = Gr.update_diameters(sid, inc, edges, cb, cc)
-    # if graph.step_with_detachment == True:
-    #     print(graph.step_with_detachment)
-    #     Dr.uniform_hist(sid, graph, edges, cb, cc,
-    #             'detachment/network_{:05d}.png'.format(sid.old_iters), "d")
-    #     graph.step_with_detachment = False
+
     if np.any(edges.diams<0):
-        print("Mamy mniejszą od zera")
+        print("The diam is less than 0!")
         print(edges.diams)
-    # print("Total bacteria: ",np.sum(edges.alive_bacteria)+np.sum(edges.dead_bacteria))
-    # print("Total alive bacteria: ", np.sum(edges.alive_bacteria))
+        raise (ValueError)
+
+    # collect network statistics
     total_bacteria.append(np.sum(edges.alive_bacteria)+np.sum(edges.dead_bacteria))
     total_alive_bacteria.append(np.sum(edges.alive_bacteria))
     # update physical parameters in data
@@ -178,24 +154,17 @@ if i != 1:
         print("Error while plotting data")
     # find time of stabilization:
     differences = np.diff(flow_number)
-    # print(differences)
-    # Znajdź indeks, od którego różnice są małe
     stable_index = np.where(differences != 0)
     if len(stable_index[0])==0:
         stable_index = 0
     else:
-    # print(stable_index)
         stable_index = np.where(differences != 0)[0][-1] +1
 
 
     if flow_number[stable_index]!=flow_number[-1]:
         stable_index = len(flow_number)-1
-    # unique_values, unique_indices = np.unique(flow_number, return_index=True)
-    # stabilization_step = np.max(unique_indices)
     stabilization_step = stable_index
     stabilization_time= data.t[stabilization_step]
-    # print(flow_number)
-    data.draw_PFPs_width(sid, PFPs_width_sum, PFPs_width_mean,stable_index)
     data.draw_flow_number(sid, flow_number, percent_infected)
     data.draw_alive_bacteria(sid, total_alive_bacteria)
     data.draw_total_bacteria(sid, total_bacteria)
@@ -207,10 +176,5 @@ if i != 1:
         text = ''
         for i in shears:
             text = text + str(i[0]) +','+str(i[1])+'\n'
-        file.write(text)
-    with open(f'{sid.dirname}/width.txt', 'a') as file:
-        text = 'PFPs_width_sum, PFPs_width_mean\n'
-        for i,j in zip(PFPs_width_sum, PFPs_width_mean):
-            text = text + str(i) +','+str(j)+'\n'
         file.write(text)
     # make_gif(sid)

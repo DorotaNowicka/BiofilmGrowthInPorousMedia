@@ -94,7 +94,7 @@ class Edges():
 
     alive_bacteria: np.ndarray
     ("initial concentration of bacteria in edge")
-    procent_of_alive
+
 
 
     """
@@ -148,8 +148,8 @@ class Edges():
         if sid.random_initial_distribution:
             self.alive_bacteria = np.where(np.random.randint(0, SimInputData.init_bacteria, len(diams)) == 0, 0.001, 0)
         else:
-            self.alive_bacteria = np.ones(len(diams))*inlet*0.001
-            # self.alive_bacteria = np.ones(len(diams))*0.001
+            self.alive_bacteria = np.ones(len(diams))*inlet*sid.init_bacteria_amount
+
 
 
 def create_matrices(sid: SimInputData, graph: Graph, inc: Incidence) -> Edges:
@@ -278,3 +278,8 @@ def create_matrices(sid: SimInputData, graph: Graph, inc: Incidence) -> Edges:
     edges = Edges(diams, lens, flow, in_edges, out_edges, edge_list,
                   boundary_edge_list, sid)
     return edges
+
+def overwrite_geometry(edges: Edges):
+    print(len(edges.diams))
+    edges.diams = np.concatenate([edges.diams[0:100],(0.2*np.ones(len(edges.diams)-100))])
+    edges.diams_initial = np.concatenate([edges.diams[0:100],(0.2*np.ones(len(edges.diams)-100))])

@@ -18,13 +18,13 @@ class SimInputData:
     '''
 
     # bacterial
-    test_param: float = 1e-06
+    test_param: float = 1.0
 
     full_edge: float = 0.99
     "procent of edge diameter fulled by bacteria from which it's red"
     critical_bacteria_radius: float = 0.5
     "procent of bacteria diameter in edge from which it starts to expand to neighbours"
-    k: float = 0.5
+    beta: float = 0.5
     "bacteria's speed of eating"
     lysis: bool = False
     "dead bacteria disappearing"
@@ -36,11 +36,11 @@ class SimInputData:
     "dynamic viscosity of the fluid"
     detachment_type: int = 1
     "choose 0 - no detachment, 1 - continuos, 2 - rapid detachment, 3 - probabilistic"
-    max_shear: float = 300
+    max_shear: float = 2000
     "shear above which the bacteria are detached"
-    detachment_percentage: float = 1e-06
+    detachment_percentage: float = 0.001
     "procent of detached bacteria"
-    detachment_bacteria_dmin: float = 0.1
+    detachment_bacteria_dmin: float = 0.001
     "minimal diameter of bacteria in radius, below wich bacteria do not detached in sudden detachment"
     random_initial_distribution: bool = False
     "if True init bacteria in random edges, else in the input edges"
@@ -53,28 +53,30 @@ class SimInputData:
     "bacteria's speed of growth"
     flow_number_point: float = 0.3
     "percent of flow max to be counted"
+    init_bacteria_amount: float = 0.001
+    "initial bacteria volume added to channel with initialization"
 
     # GENERAL
-    n: int = 10
+    n: int = 50
     "network size"
-    iters: int = 5000000
+    iters: int = 1000
     "maximum number of iterations"
-    tmax: float = 15000
+    tmax: float = 100
     "maximum time"
-    plot_every: int = 5000000
+    plot_every: int = 100
     "frequency of plotting the results"
     draw_after: int = 0
     "start plotting after this time"
-    draw_to: int = 5000
+    draw_to: int = 100000
     "stop plotting after this time"
-    plot_edges_numbers: bool = False
+    plot_edges_numbers: bool = True
     "if true, draw edges numbers on right graph"
     draw_detachment: bool = False
     "if true, draw graph before and after the detachment"
 
 
     # DISSOLUTION & PRECIPITATION
-    Da_eff: float = 0.5
+    Da_eff: float = 2
     "effective Damkohler number"
     G: float = 1.
     "diffusion to reaction ratio"
@@ -117,24 +119,24 @@ class SimInputData:
     "minimum diameter"
     dmax: float = 1000.
     "maximum diameter"
-    d_break: float = 0.5
+    d_break: float = 4.
     "minimal diameter of outlet edge for network to be dissolved"
 
     # DRAWING
     figsize: float = 40.
     "figure size"
-    qdrawconst: float = 1
+    qdrawconst: float = 7.5
     "constant for improving flow drawing"
-    ddrawconst: float = 1
+    ddrawconst: float = 2.5
     "constant for improving diameter drawing"
 
     # INITIALIZATION
-    load: int = 2
+    load: int = 0
     ("type of loading: 0 - build new network based on config and start new \
      simulation, 1 - load previous network from load_name and continue \
      simulation, 2 - load template network from load_name and start new \
      simulation")
-    load_name: str = "pisanie/2/number_of_flow_channels/continuos_detachment/alpha0.1/17/"
+    load_name: str = "pisanie/2/number_of_flow_channels/max_shear/alpha0.1/65"
     "name of loaded network"
 
     # GEOMETRY
@@ -161,7 +163,7 @@ class SimInputData:
     "total iterations of simulation"
     old_t: float = 0.
     "total time of simulation"
-    # dirname: str = "pisanie/2/number_of_flow_channels/continuos_detachment/alpha0.1"
+    # dirname: str = "pisanie/2/number_of_flow_channels/max_shear/alpha0.1"
     # "directory of simulation"
-    dirname: str = "pisanie/2/number_of_flow_channels/continuos_detachment/alpha0.1"
+    dirname: str = "chapter4/test"
     "directory of simulation"

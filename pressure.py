@@ -68,11 +68,6 @@ def calculate_shear_stress(edges: Edges, sid: SimInputData) -> np.ndarray:
     """
 
     # Calculate shear stress
-    # shear_stress = (sid.viscosity * edges.flow) / (np.pi * edges.diams**3)
-
-    # shear_stress = (sid.viscosity * edges.flow) / (np.pi * edges.diams**2 * edges.lens)
-    # shear_stress = (sid.viscosity * edges.flow) / (np.pi * edges.diams**3)
-    # shear_stress =  (sid.viscosity * edges.flow) / (np.pi * edges.diams**2)
     shear_stress =  -64 * (sid.viscosity * edges.flow) / (np.pi * edges.diams**3)
 
 
@@ -135,48 +130,11 @@ def solve_flow(sid: SimInputData, inc: Incidence, graph: Graph, edges: Edges, \
     pressure *= sid.qin * 2 * len(graph.in_nodes) / q_in
     # update flow
     edges.flow = (edges.diams ** 4 / edges.lens) * (inc.incidence @ pressure)
-    # if np.any(edges.flow  == 0):
-    #     print("Dostaliśmy flow = 0")
-    #     index_zero_flow = np.where(edges.flow==0)
-    #     print(f"Zerowy flow w {len(np.where(edges.flow == 0))}")
-    #     print(f'Edge nr: {index_zero_flow}')
-    #     print("diams:")
-    #     print(edges.diams[index_zero_flow])
-    #     print("pressure:")
-    #     print((inc.incidence @ pressure)[index_zero_flow])
-    #     print("Multiplifier:")
-    #     print((edges.diams[index_zero_flow] ** 4 / edges.lens[index_zero_flow]) )
-    #     print((inc.incidence @ pressure)[index_zero_flow])
-
-        # edge_numbers = np.where(edges.flow == 0)
-        # print(edge_numbers)
-        # nodes_con = []
-        # for a in edge_numbers:
-        #     for number in a:
-        #         print(number)
-        #         print(f"edges.diams: {edges.diams[number]}")
-        #         print(f"inc.incidence: {inc.incidence[number]}")
-        #         print(edges.edge_list[number])
-        #         print(f"pressure: {pressure[edges.edge_list[number][0]]}, {pressure[edges.edge_list[number][1]]}")
-        #         # print((edges.diams[number] ** 4 / edges.lens[number]) * (inc.incidence[number] * pressure[number]))
-        #         print(pressure)
-        #         nodes_con.append(edges.edge_list[number][0])
-        #         nodes_con.append(edges.edge_list[number][1])
-        # print(f"One of above nodes have no conection with outlet.")
-        # print(f"Nodes in: {graph.in_nodes}")
-        # print(f"Nodes connected without flow: {nodes_con}")
-
-        # return "ERROR"
 
     edges.shear = calculate_shear_stress(edges, sid)
-    # print(f"Max shear: {np.max(edges.shear)} {np.where(edges.shear==np.max(edges.shear))}")
+
     return pressure
 
 def calculate_flow_number(sid: SimInputData, edges: Edges, flow_number: list) -> None:
     flow_number.append(len(edges.flow[np.abs(edges.flow)>=np.max(np.abs(edges.flow))*sid.flow_number_point]))
-
-def calculate_PFPs_width(sid: SimInputData, edges: Edges, PFPs_width_sum: list, PFPs_width_mean: list) -> None:
-    edge_in_PFP = (np.abs(edges.flow)>=np.max(np.abs(edges.flow))*sid.flow_number_point)
-    PFPs_width_mean.append(np.mean(edge_in_PFP*edges.diams))
-    PFPs_width_sum.append(np.sum(edge_in_PFP*edges.diams))
 

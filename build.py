@@ -86,3 +86,4 @@ def build() -> tuple[SimInputData, In.Incidence, De.Graph, In.Edges, Data]:
         data = Data(sid)
         Sv.save_config(sid)
     return sid, inc, graph, edges, data
+
