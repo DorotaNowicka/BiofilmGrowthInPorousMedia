@@ -3,11 +3,9 @@
 
 This module performs the whole simulation. It should be started after all
 parameters in config file are set (most importantly n - network size,
-iters/tmax - simulation length, Da_eff, G, K, Gamma - dissolution/precipitation
-parameters, include_cc - turn on precipitation, load - build a new network
-or load a previous one). After starting, directory consisting of
-geometry + network size / G + Damkohler number / simulation index
-will be created. Plots of the network and other data will be saved there.
+iters/tmax - simulation length, Da, max_shear, gamma parameters,  
+load - build a new network or load a previous one).  
+Plots of the network and other data will be saved to new folder.
 """
 
 import dissolution as Di
