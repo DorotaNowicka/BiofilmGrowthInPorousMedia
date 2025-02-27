@@ -54,7 +54,7 @@ def create_vector(sid: SimInputData, graph: Graph) -> spr.csc_matrix:
     return spr.csc_matrix((data, (row, col)), shape=(sid.nsq, 1))
 
 def solve_dissolution(sid: SimInputData, inc: Incidence, graph: Graph, \
-    edges: Edges, cb_b: spr.csc_matrix, i) -> np.ndarray:
+    edges: Edges, cb_b: spr.csc_matrix, i, cb_previous) -> np.ndarray:
     """ Calculate B concentration.
 
     This function solves the advection-reaction equation for substance B
@@ -103,8 +103,11 @@ def solve_dissolution(sid: SimInputData, inc: Incidence, graph: Graph, \
             * alive_b_diameter * edges.lens / edges.flow))
         else:
             theta = (edges.alive_bacteria>0)
-            qc = edges.flow * np.exp(-np.abs(sid.Da / (1 + sid.G * edges.diams) \
-            * edges.diams * np.pi * edges.lens * theta / edges.flow)) 
+            # qc = edges.flow * np.exp(-np.abs(sid.Da / (1 + sid.G * edges.diams) \
+            # * edges.diams * np.pi * edges.lens * theta / edges.flow)) 
+            qc = edges.flow * np.exp(-np.abs(sid.k \
+            * edges.diams * np.pi * edges.lens * theta / edges.flow))
+            qc = np.array(np.ma.fix_invalid(qc, fill_value = 0))
     except RuntimeWarning:
         print(f"In itteration nr: {i}")
         print("Runtime Warning edges DIAMS:")
@@ -131,5 +134,29 @@ def solve_dissolution(sid: SimInputData, inc: Incidence, graph: Graph, \
             diag[node] = 1
     # replace diagonal
     cb_matrix.setdiag(diag)
-    cb = solve_equation(cb_matrix, cb_b)
+    # if i >= 12850:
+    #     print(np.min(cb_matrix), np.min(np.abs(cb_matrix)))
+    #     print(np.min(cb_b), np.min(np.abs(cb_b)))
+    #     A_coo = cb_matrix.tocoo()
+    #     # Zapis do pliku: wiersz, kolumna, wartość
+    #     np.savetxt(f"A_{i}.txt", 
+    #             np.column_stack((A_coo.row, A_coo.col, A_coo.data)), 
+    #             fmt="%d %d %.5f")
+                
+    
+    # col_index = 2
+    # start, end = cb_matrix.indptr[col_index], cb_matrix.indptr[col_index + 1] 
+    # col_data = cb_matrix.data[start:end] 
+    # col_indices = cb_matrix.indices[start:end] 
+    # mask = (col_data > 0) & (col_data < 1e-100)
+    # col_data[mask] = 0
+    # cb_matrix.data[start:end] = col_data
+
+    cb_new = solve_equation(cb_matrix, cb_b)
+    if np.isnan(cb_new).any():
+        # print("happend")
+        cb = cb_previous
+    else:
+        cb = cb_new
+    cb = np.array(np.ma.fix_invalid(cb, fill_value = 0))
     return cb

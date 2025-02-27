@@ -84,9 +84,6 @@ def update_diameters(sid: SimInputData, inc: Incidence, edges: Edges,
     # set minimum diameter if d<dmin
     diams_new = diams_new * (diams_new >= sid.dmin) \
         + sid.dmin * (diams_new < sid.dmin)
-    # if np.max(edges.outlet * edges.diams) > sid.d_break:
-    #     breakthrough = True
-    #     print('Network dissolved.')
     if sid.include_adt:
         dt_next = sid.growth_rate / np.max(np.abs((diams_new - edges.diams)
                                                   / sid.dt / edges.diams))
@@ -146,8 +143,9 @@ def solve_d(sid: SimInputData, inc: Incidence, edges: Edges, cb: np.ndarray) \
         change = np.array(np.ma.fix_invalid(change, fill_value = 0))
     else:
         theta = (edges.alive_bacteria>0)
-        change = sid.alpha *theta * cb_in *np.abs(edges.flow)* (1-np.exp(
-            -sid.Da / (1 + sid.G * edges.diams) * edges.diams * edges.lens *np.pi
+
+        change = sid.alpha *theta * np.abs(edges.flow) *cb_in * (1-np.exp(
+            -sid.k * np.pi * edges.lens * edges.diams 
             / np.abs(edges.flow))) * sid.dt
         change = np.array(np.ma.fix_invalid(change, fill_value = 0))
 

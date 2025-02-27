@@ -145,12 +145,12 @@ class Edges():
         self.spreaded = np.full(len(diams), False, dtype=bool)
         self.shear = np.zeros(len(diams))
         self.max_bacteria = np.zeros(len(diams))
+        self.diams_prev = diams
+        self.flow_prev = flow
         if sid.random_initial_distribution:
             self.alive_bacteria = np.where(np.random.randint(0, SimInputData.init_bacteria, len(diams)) == 0, 0.001, 0)
         else:
             self.alive_bacteria = np.ones(len(diams))*inlet*sid.init_bacteria_amount
-
-
 
 def create_matrices(sid: SimInputData, graph: Graph, inc: Incidence) -> Edges:
     """ Create incidence matrices and edges class for graph parameters.
@@ -283,3 +283,33 @@ def overwrite_geometry(edges: Edges):
     print(len(edges.diams))
     edges.diams = np.concatenate([edges.diams[0:100],(0.2*np.ones(len(edges.diams)-100))])
     edges.diams_initial = np.concatenate([edges.diams[0:100],(0.2*np.ones(len(edges.diams)-100))])
+
+
+def bacterial_spread(sid: SimInputData, edges: Edges, \
+    inc: Incidence) -> None:
+    # check which edges can spread bacteria
+    spread_source = 1 * (edges.diams / edges.diams_initial \
+        < (1 - sid.critical_bacteria))
+    # check if there are new edges that can spread
+    spread_source_check = spread_source * \
+        (1 - (edges.diams_prev / edges.diams_initial \
+        < (1 - sid.critical_bacteria)))
+    # check if flow changed direction somewhere - that can lead to new
+    # spreading even if there are no new spread sources
+    flow_direction = 1 * (np.sign(edges.flow) != np.sign(edges.flow_prev))
+    # if there are new possibilities to spread, build spread matrix
+    # (i, j) is 1 if edge i is a spread source and edge j is downstream
+    # and has no bacteria
+    if np.sum(spread_source_check) or np.sum(flow_direction):
+        downstream_edges = 1 * (spr.diags(spread_source) \
+            @ (inc.incidence.T @ spr.diags(edges.flow) < 0).T \
+            @ (inc.incidence.T @ spr.diags(edges.flow) > 0) \
+            @ spr.diags(1 * (edges.alive_bacteria == 0)))
+        # we update edges with bacteria simultanously, so there can be more
+        # than one spread source which adds bacteria to an edge without
+        # them
+        spread_number = np.array(downstream_edges.sum(axis = 0))[0]
+        # spread_number = spread_number * (np.abs(edges.flow)>0.1)
+        source_number = np.array(downstream_edges.sum(axis = 1))[:, 0]
+        edges.alive_bacteria += spread_number * sid.init_bacteria_amount \
+            - source_number * sid.init_bacteria_amount

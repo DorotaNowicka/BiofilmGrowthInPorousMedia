@@ -79,24 +79,44 @@ class Graph(nx.graph.Graph):
         edges_ordered = [edges.edge_list[i] if edges.flow[i] < 0 else (edges.edge_list[i][1], edges.edge_list[i][0]) for i in range(len(edges.edge_list))]
 
         for i in range(len(edges.diams)):
-            if edges.diams[i]/edges.diams_initial[i] < (1-sid.critical_bacteria_radius):
-                next_node = edges_ordered[i][1]
-                neighbour_edges = []
-                for j, tupla in enumerate(edges_ordered):
-                    if tupla[0]==next_node:
-                        neighbour_edges.append(j)
-                for neighbour in neighbour_edges:
-                    if edges.alive_bacteria[neighbour]==0:
-                        edges.alive_bacteria[neighbour]+=sid.init_bacteria_amount
-                        edges.alive_bacteria[i]-=sid.init_bacteria_amount
+            if edges.diams[i]/edges.diams_initial[i] < (1-sid.critical_bacteria):
+                if np.abs(edges.flow[i]) > 0.1:
+                    next_node = edges_ordered[i][1]
+                    neighbour_edges = []
+                    for j, tupla in enumerate(edges_ordered):
+                        if tupla[0]==next_node:
+                            neighbour_edges.append(j)
+                    for neighbour in neighbour_edges:
+                        if edges.inlet[neighbour]==1:
+                            print("i am trying to spread to inlet node")
+                            print(edges.flow[neighbour])
+                            continue
+                        if np.abs(edges.flow[neighbour]) > 0.0000000001:
+                            if edges.alive_bacteria[neighbour]==0:
+                                edges.alive_bacteria[neighbour]+=sid.init_bacteria_amount
+                                edges.alive_bacteria[i]-=sid.init_bacteria_amount
 
 
 
     def bacterial_dying(self, sid: SimInputData, edges: Edges) -> None:
         if sid.lysis == True:
-            edges.alive_bacteria -= edges.alive_bacteria*sid.death_ratio*sid.dt
-            volume_after_lysis = edges.diams_initial**2*np.pi/4*edges.lens-edges.alive_bacteria
-            edges.diams = np.sqrt(4*volume_after_lysis/(np.pi*edges.lens))
+            edges.alive_bacteria = edges.alive_bacteria - edges.alive_bacteria*sid.death_ratio*sid.dt
+            edges.dead_bacteria =  edges.dead_bacteria + edges.alive_bacteria*sid.death_ratio*sid.dt
+            if np.any(edges.dead_bacteria/edges.max_bacteria >= sid.lysis_treshold):
+                print(f"lysis happend in channel {np.where(edges.dead_bacteria/edges.max_bacteria >= sid.lysis_treshold)}")
+                with open(f'{sid.dirname.rsplit("/",1)[0]}/lysis_log.txt', 'a') as file:
+                    file.write(f"lysis happend in channel {np.where(edges.dead_bacteria/edges.max_bacteria >= sid.lysis_treshold)}")
+
+      
+            edges.alive_bacteria = np.zeros(len(edges.alive_bacteria))+ (edges.dead_bacteria/edges.max_bacteria < sid.lysis_treshold) * edges.alive_bacteria
+            edges.dead_bacteria = np.zeros(len(edges.alive_bacteria)) +(edges.dead_bacteria/edges.max_bacteria < sid.lysis_treshold) * edges.dead_bacteria
+
+                 # print((edges.dead_bacteria/edges.max_bacteria)[52:55])
+            edges.diams = edges.diams*(edges.dead_bacteria/edges.max_bacteria < sid.lysis_treshold)+edges.diams_initial*(edges.dead_bacteria/edges.max_bacteria >= sid.lysis_treshold)
+            
+            # volume_after_lysis = edges.diams_initial**2*np.pi/4*edges.lens-edges.alive_bacteria-edges.dead_bacteria
+            # edges.diams = np.sqrt(4*volume_after_lysis/(np.pi*edges.lens))
+            
         else:
             edges.dead_bacteria += edges.alive_bacteria*sid.death_ratio*sid.dt
             edges.alive_bacteria -= edges.alive_bacteria*sid.death_ratio*sid.dt
@@ -108,6 +128,7 @@ class Graph(nx.graph.Graph):
        
         elif sid.detachment_type == 1:
             detachment = sid.detachment_percentage * (edges.shear>sid.max_shear)*edges.shear*sid.dt
+            # print(np.max(edges.shear))
             if np.any(detachment>1):
                 detachment = (detachment<=1)*detachment+(detachment>1)*np.ones(len(detachment))
             here = np.where(detachment > 0)
@@ -122,7 +143,7 @@ class Graph(nx.graph.Graph):
                 edges.diams = np.sqrt(4*volume_after_detachment/(np.pi*edges.lens))
             if np.any(np.round(edges.diams,6)>np.round(edges.diams_initial,6)):
                 print("Detachment bigger than 1! Diam bigger than initial!")
-                # raise ValueError
+                raise ValueError
 
 
         elif sid.detachment_type == 2:
@@ -130,38 +151,13 @@ class Graph(nx.graph.Graph):
             detachment = sid.detachment_percentage * (edges.shear>sid.max_shear)*enough_bacteria
             here = np.where(detachment > 0)
             if np.any(detachment>0):
-                print(f"Rapid detachment happend for {len(here[0])}")
 
-                #print detachment info:
-
-                # # print(here)
-                # print(f"Edge nr {here}")
-                # print(f"Bacteria alive: {edges.alive_bacteria[here]},     dead: {edges.dead_bacteria[here]}")
-                # print(f"Diams: {edges.diams[here]}")
-                # print(f"Diam initail: {edges.diams_initial[here]}")
-                # print(f"Percent: {edges.diams[here]/edges.diams_initial[here]}")
                 if np.any(edges.alive_bacteria[here]!=0):
                     self.step_with_detachment = True
                 edges_with_detachment.append(here)
-                # this part of code is moved to __main__.py due to enable drawing after detachment
-                #     edges.alive_bacteria -= detachment*edges.alive_bacteria
-                #     edges.dead_bacteria -= detachment*edges.dead_bacteria
-                #     volume_after_detachment = edges.diams_initial**2*np.pi/4*edges.lens-edges.alive_bacteria-edges.dead_bacteria
-                #     edges.diams = np.sqrt(4*volume_after_detachment/(np.pi*edges.lens))
-                # if np.any(edges.diams<0):
-                #     print("PO")
-                #     print("Mamy mniejszą od zera")
-                #     print(edges.diams)
-                    
-
-                # if np.any(detachment>0):
-                #     print(f"Edge nr {here}")
-                #     print(f"Bacteria alive: {edges.alive_bacteria[here]},     dead: {edges.dead_bacteria[here]}")
-                #     print(f"Diams: {edges.diams[here]}")
-                #     print(f"Percent: {edges.diams[here]/edges.diams_initial[here]}")
+    
         elif sid.detachment_type == 3:
             enough_bacteria = ((edges.diams_initial-edges.diams)>sid.detachment_bacteria_dmin)
-            # random_p = 1-np.abs(np.random.random(size=len(edges.shear))*2-np.ones(len(edges.shear)))
             random_p =  1- np.random.beta(1,2,size=len(edges.shear))
             print("min random: ", np.min(random_p))
             print( np.min(random_p)*sid.max_shear)
@@ -365,9 +361,6 @@ def build_delaunay_net(sid: SimInputData) -> Graph:
 
     graph_copy = graph.copy()
     for node in graph.nodes():
-        # l = graph[node][neigh]['l']
-        # if l > 3 * length_avr:
-        #    graph.remove_edge(node, neigh)
         if len(list(graph.neighbors(node))) == 0:
             new_neigh = graph.find_node(graph.nodes[node]["pos"])
             graph.add_edge(node, new_neigh)

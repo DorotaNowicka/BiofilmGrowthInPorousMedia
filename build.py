@@ -79,7 +79,8 @@ def build() -> tuple[SimInputData, In.Incidence, De.Graph, In.Edges, Data]:
         sid.n = sid2.n
         sid.nsq = sid2.nsq
         sid.ne = sid2.ne
-        sid.dirname = sid2.dirname + '/template'
+        # sid.dirname = sid2.dirname + '/template'
+        sid.dirname = sid2.dirname + sid.subfolder_name
         make_dir(sid)
         inc = In.Incidence()
         edges = In.create_matrices(sid, graph, inc)

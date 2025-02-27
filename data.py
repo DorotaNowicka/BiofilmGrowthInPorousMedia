@@ -80,7 +80,7 @@ class Data():
             except PermissionError:
                 pass
 
-    def check_data(self, edges: Edges) -> None:
+    def check_data(self, edges: Edges, sid:SimInputData) -> None:
         """ Check the key physical parameters of the simulation.
 
         This function calculates and checks if basic physical properties of the
@@ -97,7 +97,7 @@ class Data():
         Q_in = np.sum(edges.inlet * np.abs(edges.flow))
         Q_out = np.sum(edges.outlet * np.abs(edges.flow))
         print('Q_in =', Q_in, 'Q_out =', Q_out)
-        if np.abs(Q_out-100)>1:
+        if np.abs(Q_out-2*sid.n)>1:
             raise ValueError
 
 
@@ -186,7 +186,7 @@ class Data():
         t = data[:, 0]
         plt.figure(figsize=(sid.figsize * 1.5, sid.figsize))
         plt.rc('font', size=50)
-        plt.title(f'Number of edges with flow > {sid.flow_number_point} flow_max  ' + np.str(np.round(percent_infected*100,2)) + "%", fontsize=50)
+        plt.title(f'Number of edges with flow > {sid.flow_number_point} flow_max  ' + np.str_(np.round(percent_infected*100,2)) + "%", fontsize=50)
         plt.plot(t, flow_number)
         plt.xlabel('simulation time')
         # plt.savefig(f"{self.dirname.rsplit('/',1)[0]}/flow_number_par{'{:06.8f}'.format(sid.test_param)}.png")
@@ -235,5 +235,40 @@ class Data():
         print(f"Flow numbers: {self.dirname.rsplit('/',1)[0]}/alive_bacteria_par{'{:06.8f}'.format(sid.test_param)}.png")
         plt.close()
 
+
+
+    def draw_PFPs_width(self, sid: SimInputData, PFPs_width_sum: list, PFPs_width_mean: list) -> None:
+        """ Plot data from text file.
+
+        This function loads the data from text file params.txt and plots them
+        to file params.png.
+        """
+        f = open(self.dirname + f'/params_par{sid.test_param}.txt', 'r', encoding = "utf-8")
+        data = np.loadtxt(f)
+        t = data[sid.stabilization_time:, 0]
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(sid.figsize * 1.5, sid.figsize))
+
+        # Wykres sumy szerokości PFPs
+        ax1.set_title('Sum of PFPs widths', fontsize=20)
+        ax1.plot(t, PFPs_width_sum[sid.stabilization_time:])
+        ax1.set_xlabel('Simulation time', fontsize=15)
+        ax1.tick_params(axis='both', which='major', labelsize=12)
+
+        # Wykres średniej szerokości PFPs
+        ax2.set_title('Mean of PFPs widths', fontsize=20)
+        ax2.plot(t, PFPs_width_mean[sid.stabilization_time:])
+        ax2.set_xlabel('Simulation time', fontsize=15)
+        ax2.tick_params(axis='both', which='major', labelsize=12)
+
+        # plt.savefig(f"{self.dirname.rsplit('/',1)[0]}/alive_bacteria_par{'{:06.8f}'.format(sid.test_param)}.png")
+        fig.savefig(f"{self.dirname}/PFPs_par{'{:06.8f}'.format(sid.test_param)}.png")
+        plt.close()
+
+
+        with open(f"{self.dirname}/PFPs_width", "w") as file:
+            for values in zip(t, PFPs_width_sum, PFPs_width_mean):
+                line = ",".join(map(str, values))  # konwertujemy wartości na stringi i łączymy przecinkami
+                file.write(line + "\n")
+
     def set_infected(self, edges: Edges, infected_by_bacteria: np.ndarray, sid: SimInputData) -> None:
-        infected_by_bacteria += (edges.diams<(edges.diams_initial*0.7))*np.ones(len(edges.diams))
+        infected_by_bacteria = (edges.diams<(edges.diams_initial*0.7))*np.ones(len(edges.diams))

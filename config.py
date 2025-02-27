@@ -17,75 +17,89 @@ class SimInputData:
     ''' Configuration class for the whole simulation.
     '''
 
-    # bacterial
-    test_param: float = 1.0
+    # BACTERIAL:
 
-    full_edge: float = 0.99
-    "procent of edge diameter fulled by bacteria from which it's red"
-    critical_bacteria_radius: float = 0.5
-    "procent of bacteria diameter in edge from which it starts to expand to neighbours"
-    beta: float = 0.5
-    "bacteria's speed of eating"
-    lysis: bool = False
-    "dead bacteria disappearing"
-    death_ratio: float = 0
-    "bacteria's procent of dying"
-    graph_duration: float = 0.5
-    "time of single image in graph"
-    viscosity: float = 1
+    # utils
+    test_param: float = 0.1
+    "to add in result file name"
+    stabilization_time: int = 0
+    "time from with the PFPs width graphs are created"
+
+
+    # key bacteria parameters
+    Da: float = 0.5
+    "Damkohler number"
+    t_half: float = 10
+    "time to half growth the channel diameter"
+
+    k: float = Da/np.pi
+    "Reaction rate constant"
+    alpha: float = 1/(2*(0.5/np.pi)*t_half)
+    "bacteria's speed of growth"
+    viscosity: float = 1.0
     "dynamic viscosity of the fluid"
-    detachment_type: int = 1
-    "choose 0 - no detachment, 1 - continuos, 2 - rapid detachment, 3 - probabilistic"
-    max_shear: float = 2000
-    "shear above which the bacteria are detached"
-    detachment_percentage: float = 0.001
-    "procent of detached bacteria"
-    detachment_bacteria_dmin: float = 0.001
-    "minimal diameter of bacteria in radius, below wich bacteria do not detached in sudden detachment"
     random_initial_distribution: bool = False
     "if True init bacteria in random edges, else in the input edges"
-    init_bacteria: int = 5
+    init_bacteria: int = 1
     "create initial bacteria in one out of init_bacteria edges"
     use_volume: bool = False
     "calculate concentration and growth using volume of alive bacteria"
     "second option is to use the flat"
-    alpha: float = 0.1
-    "bacteria's speed of growth"
-    flow_number_point: float = 0.3
+    flow_number_point: float = 0.001
     "percent of flow max to be counted"
     init_bacteria_amount: float = 0.001
     "initial bacteria volume added to channel with initialization"
 
+    # biofilm volume
+    full_edge: float = 0.99
+    "procent of edge diameter fulled by bacteria from which it's red"
+    critical_bacteria: float = 0.5
+    "procent of bacteria diameter in edge from which it starts to expand to neighbours"
+    
+    
+    # lysis and death
+    lysis: bool = True
+    "dead bacteria disappearing"
+    death_ratio: float = 0.0005 
+    "bacteria's procent of dying"
+    lysis_treshold: float = 0.8
+    "lysis treshold"
+
+
+    # detachment
+    detachment_type: int = 2
+    "choose 0 - no detachment, 1 - continuos, 2 - rapid detachment, 3 - probabilistic"
+    max_shear: float = 1000000000
+    "shear above which the bacteria are detsached"
+    detachment_percentage: float = 0.3
+    "procent of detached bacteria"
+    detachment_bacteria_dmin: float = 0.000001
+    "minimal diameter of bacteria in radius, below wich bacteria do not detached in sudden detachment"
+   
+   
+
     # GENERAL
     n: int = 50
     "network size"
-    iters: int = 1000
+    iters: int = 10000000
     "maximum number of iterations"
-    tmax: float = 100
+    tmax: float = 10000
     "maximum time"
-    plot_every: int = 100
+
+    # drawing
+    plot_every: int = 5000
     "frequency of plotting the results"
     draw_after: int = 0
     "start plotting after this time"
-    draw_to: int = 100000
+    draw_to: int = 10000000
     "stop plotting after this time"
-    plot_edges_numbers: bool = True
+    plot_edges_numbers: bool = False
     "if true, draw edges numbers on right graph"
     draw_detachment: bool = False
     "if true, draw graph before and after the detachment"
+    graph_duration: float = 0.5
+    "time of single image in graph"
 
-
-    # DISSOLUTION & PRECIPITATION
-    Da_eff: float = 2
-    "effective Damkohler number"
-    G: float = 1.
-    "diffusion to reaction ratio"
-    Da: float = Da_eff * (1 + G)
-    "Damkohler number"
-    K: float = 0.5
-    "precipitation to dissolution reaction rate"
-    Gamma: float = 1.3
-    "precipitation to dissolution acid capacity number"
 
     # INCLUDE
     include_adt: bool = True
@@ -97,23 +111,23 @@ class SimInputData:
     qin: float = 1.
     "characteristic flow for inlet edge"
     cb_in: float = 1.
-    "inlet B concentration"
-    cc_in: float = 0.
+    "inlet substrate concentration"
+    cc_in: float = 2
     "inlet C concentration"
 
     # TIME
-    dt: float = 0.1
+    dt: float = 0.01
     "initial timestep (if no adaptive timestep, timestep for whole simulation)"
-    growth_rate: float = 0.01
+    growth_rate: float = 0.005
     ("maximum percentage growth of an edges (used for finding adaptive \
      timestep)")
     dt_max: float = 1
     "maximum timestep (for adaptive)"
 
     # DIAMETERS
-    d0: float = 2.0
+    d0: float = 1.0
     "initial dimensionless mean diameter"
-    sigma_d0: float = 0.2
+    sigma_d0: float = 0.1
     "initial diameter standard deviation"
     dmin: float = 1e-3
     "minimum diameter"
@@ -125,19 +139,23 @@ class SimInputData:
     # DRAWING
     figsize: float = 40.
     "figure size"
-    qdrawconst: float = 7.5
+    qdrawconst: float = 0.4
     "constant for improving flow drawing"
-    ddrawconst: float = 2.5
+    ddrawconst: float = round(120/n,2)
     "constant for improving diameter drawing"
+    cdrawconst: float = 20
+    "constant for improving concentration drawing"
 
     # INITIALIZATION
-    load: int = 0
+    load: int = 2
     ("type of loading: 0 - build new network based on config and start new \
      simulation, 1 - load previous network from load_name and continue \
      simulation, 2 - load template network from load_name and start new \
      simulation")
-    load_name: str = "pisanie/2/number_of_flow_channels/max_shear/alpha0.1/65"
-    "name of loaded network"
+    load_name: str = "/home/dorota-nowicka/DEU/mgr_biofilm_klaster/chapter4/lysis/17/"
+
+    subfolder_name: str = "/lysis_rapid_chosen"
+
 
     # GEOMETRY
     geo: str = "rect"  # WARNING - own is deprecated
@@ -163,7 +181,5 @@ class SimInputData:
     "total iterations of simulation"
     old_t: float = 0.
     "total time of simulation"
-    # dirname: str = "pisanie/2/number_of_flow_channels/max_shear/alpha0.1"
-    # "directory of simulation"
-    dirname: str = "chapter4/test"
+    dirname: str = "chapter5/lysis/"
     "directory of simulation"

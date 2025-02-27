@@ -124,9 +124,6 @@ def solve_flow(sid: SimInputData, inc: Incidence, graph: Graph, edges: Edges, \
     # flow
     q_in = np.abs(np.sum(edges.diams ** 4 / edges.lens * (inc.inlet \
         @ pressure)))
-    if np.any(q_in  == 0):
-        pass
-        # print(q_in)
     pressure *= sid.qin * 2 * len(graph.in_nodes) / q_in
     # update flow
     edges.flow = (edges.diams ** 4 / edges.lens) * (inc.incidence @ pressure)
@@ -135,6 +132,24 @@ def solve_flow(sid: SimInputData, inc: Incidence, graph: Graph, edges: Edges, \
 
     return pressure
 
-def calculate_flow_number(sid: SimInputData, edges: Edges, flow_number: list) -> None:
-    flow_number.append(len(edges.flow[np.abs(edges.flow)>=np.max(np.abs(edges.flow))*sid.flow_number_point]))
+def calculate_flow_number(sid: SimInputData, edges: Edges, flow_number: list, \
+                          PFPs_width_sum: list, PFPs_width_mean: list) -> None:
+    # find preferential edges
+    PFPs_indexes = np.where([np.abs(edges.flow)>=np.max(np.abs(edges.flow))*sid.flow_number_point])
+    number = len(PFPs_indexes[1])
+    flow_number.append(number)
+
+    # calculate edges width sum and avg
+    if number>0:
+        width_sum = 0
+        for edge in PFPs_indexes[1]:
+            width_sum = width_sum + edges.diams[edge]
+        PFPs_width_sum.append(width_sum)
+        PFPs_width_mean.append(width_sum/number)
+    else:
+        PFPs_width_sum.append(0)
+        PFPs_width_mean.append(0)
+
+
+
 

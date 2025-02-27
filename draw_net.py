@@ -20,7 +20,7 @@ import matplotlib.colors as mcolors
 from config import SimInputData
 from delaunay import Graph
 from incidence import Edges
-
+import gc
 
 def set_colors(edges: Edges, sid: SimInputData, alive='not'):
     """ Set colors in dependence of amount of bacteria in channel
@@ -60,15 +60,15 @@ def set_colors(edges: Edges, sid: SimInputData, alive='not'):
         # elif diam == sid.dmin:
             color = '#ff0000'
             colors.append(color)
-        elif procent < sid.critical_bacteria_radius:
-            norm = plt.Normalize(sid.dmin, sid.critical_bacteria_radius)
+        elif procent < sid.critical_bacteria:
+            norm = plt.Normalize(sid.dmin, sid.critical_bacteria)
             cmap = plt.get_cmap('summer')
             edge_color = cmap(norm(amount))
             colors.append(mcolors.to_hex(edge_color))
         else:
-            if procent < sid.critical_bacteria_radius:
+            if procent < sid.critical_bacteria:
                 print("ERROR?")
-            norm = plt.Normalize(sid.critical_bacteria_radius, sid.full_edge)
+            norm = plt.Normalize(sid.critical_bacteria, sid.full_edge)
             cmap = plt.get_cmap('cool')
             edge_color = cmap(norm(amount))
             colors.append(mcolors.to_hex(edge_color))
@@ -164,7 +164,7 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
     plt.axis('equal')
     pos = nx.get_node_attributes(graph, 'pos')
 
-    nx.draw_networkx_nodes(graph, pos, graph.nodes, node_size=100*cb)
+    nx.draw_networkx_nodes(graph, pos, graph.nodes, node_size=sid.cdrawconst*cb)
     # draw inlet and outlet nodes
     x_in, y_in = [], []
     for node in graph.in_nodes:
@@ -202,15 +202,17 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
                 edgecolors='white')
     qs = (1 - edges.boundary_list) * np.abs(edges.flow) 
     nx.draw_networkx_edges(graph, pos, edge_color=set_colors_shear(edges, sid),
-                           width=sid.ddrawconst * np.array(qs))
+                           width=sid.qdrawconst * np.array(qs))
     # THIRD PLOT
    
     plt.subplot(spec.new_subplotspec((0, 2), colspan=2))
-    plt.title('Initial diameters and all bacterias  '+np.str(np.round(percent_infected*100,2)) + "%", fontsize=35)
+    # plt.title('Initial diameters and all bacterias  '+np.str_(np.round(percent_infected*100,2)) + "%", fontsize=35)
+    plt.title('Initial diameters and alive bacterias  '+np.str_(np.round(percent_infected*100,2)) + "%", fontsize=35)
+
     plt.axis('equal')
     pos = nx.get_node_attributes(graph, 'pos')
 
-    nx.draw_networkx_nodes(graph, pos, graph.nodes, node_size=100*cb)
+    nx.draw_networkx_nodes(graph, pos, graph.nodes, node_size=sid.cdrawconst*cb)
     # draw inlet and outlet nodes
     x_in, y_in = [], []
     for node in graph.in_nodes:
@@ -224,13 +226,13 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
     plt.scatter(x_out, y_out, s=60, facecolors='black',
                 edgecolors='white')
     qs3 = (1 - edges.boundary_list) * edges.diams_initial * (1/2)
-    nx.draw_networkx_edges(graph, pos, edge_color=set_colors(edges, sid),
+    nx.draw_networkx_edges(graph, pos, edge_color=set_colors(edges, sid, alive='alive'),
                            width=sid.ddrawconst * np.array(qs3))
     if sid.plot_edges_numbers:
         labels_dict = dict(zip(graph.edges,list(range(len(edges.diams)))))
         nx.draw_networkx_edge_labels(graph, pos, labels_dict)
 
-    # FOURTH PLOT
+    # # FOURTH PLOT
     plt.subplot(spec.new_subplotspec((1, 2), colspan=2))
     plt.title('Initial diameters and shear', fontsize=35)
     plt.axis('equal')
@@ -250,49 +252,17 @@ def uniform_hist(sid: SimInputData, graph: Graph, edges: Edges,
     plt.scatter(x_out, y_out, s=60, facecolors='black',
                 edgecolors='white')
     qs3 = (1 - edges.boundary_list) * edges.diams_initial * (1/2)
-    nx.draw_networkx_edges(graph, pos, edge_color=set_colors_shear(edges, sid),
-                           width=sid.ddrawconst * np.array(qs3))
+    nx.draw_networkx_edges(graph, pos, edge_color=set_colors(edges, sid),
+                           width=sid.qdrawconst * np.array(qs))
+    # nx.draw_networkx_edges(graph, pos, edge_color=set_colors_shear(edges, sid),
+    #                        width=sid.ddrawconst * np.array(qs3))
     if sid.plot_edges_numbers:
         labels_dict = dict(zip(graph.edges,list(range(len(edges.diams)))))
         nx.draw_networkx_edge_labels(graph, pos, labels_dict)
 
-    # draw histograms with data below the network
-
-    plt.subplot(spec.new_subplotspec((2,0), colspan=1)).set_title('Diameter')
-
-    plt.hist(edges.diams, bins=50)
-
-        # print(edges.diams)
-    try:
-        plt.yscale("log")
-        plt.subplot(spec.new_subplotspec((2,1))).set_title('Flow', fontsize=35)
-        plt.hist(np.abs(edges.flow), bins=50)
-    except:
-        print("Value Error")
-        raise(ValueError)
-        # print(edges.flow)
-    try:
-        plt.yscale("log")
-        plt.subplot(spec.new_subplotspec((2,2))).set_title('cb', fontsize=35)
-        plt.hist(cb, bins=50)
-    except ValueError:
-        print("Value Error")
-        # print(cb)   
-    try:
-        plt.yscale("log")
-        plt.subplot(spec.new_subplotspec((2,3))).set_title('Shear', fontsize=35)
-        plt.hist(np.abs(edges.shear), bins=50)
-    except ValueError:
-        print("Value Error")
-        # print(edges.shear)   
-    plt.yscale("log")
-    # plt.subplot(spec[cols + 6], colspan=2).set_title('cc')
-    # plt.hist(cc, bins=50)
-    # plt.yscale("log")
-    # save file in the directory
     plt.savefig(sid.dirname + "/" + name)
     plt.close()
-    plt.clf()
+    gc.collect()
 
 
     
